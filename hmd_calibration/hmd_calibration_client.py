@@ -87,3 +87,4 @@ print send_recv_notification(n)
 time.sleep(2)
 n = {'subject':'service_process.should_stop'}
 print send_recv_notification(n)
+sender.send('e')
