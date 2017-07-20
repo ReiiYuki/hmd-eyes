@@ -3,14 +3,22 @@ HMD calibration client example.
 This script shows how to talk to Pupil Capture or Pupil Service
 and run a gaze mapper calibration.
 '''
-import zmq, msgpack, time
+import zmq, msgpack, time,sys
+from network import TCPSocket
+
 ctx = zmq.Context()
 
+port = 50124
+
+if len(sys.argv) >= 2 :
+    port = sys.argv[1]
 
 #create a zmq REQ socket to talk to Pupil Service/Capture
 req = ctx.socket(zmq.REQ)
-req.connect('tcp://localhost:50124')
+req.connect('tcp://localhost:'+str(port))
 
+#create a tcp sender
+sender = TCPSocket('localhost',65535)
 
 #convenience functions
 def send_recv_notification(n):
@@ -47,6 +55,7 @@ if should_start.lower() == 'y' :
     ref_data = []
     for pos in ((0.5,0.5),(0,0),(0,0.5),(0,1),(0.5,1),(1,1),(1,0.5),(1,0),(.5,0)):
         print 'subject now looks at position:',pos
+        sender.send('u')
         time.sleep(1)
         for s in range(60):
             # you direct screen animation instructions here
