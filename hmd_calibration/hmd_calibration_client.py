@@ -47,6 +47,7 @@ if should_start.lower() == 'y' :
     ref_data = []
     for pos in ((0.5,0.5),(0,0),(0,0.5),(0,1),(0.5,1),(1,1),(1,0.5),(1,0),(.5,0)):
         print 'subject now looks at position:',pos
+        time.sleep(1)
         for s in range(60):
             # you direct screen animation instructions here
 
@@ -60,6 +61,7 @@ if should_start.lower() == 'y' :
             ref_data.append(datum0)
             ref_data.append(datum1)
             time.sleep(1/60.) #simulate animation speed.
+        time.sleep(1)
 
     # Send ref data to Pupil Capture/Service:
     # This notification can be sent once at the end or multiple times.
