@@ -7,6 +7,7 @@ import zmq, msgpack, time,sys
 from network import TCPSocket
 from zmq_tools import Msg_Receiver
 from msgpack import loads
+from sender import UDPSender
 
 #from receiver import Receiver
 
@@ -34,6 +35,7 @@ sub.setsockopt_string(zmq.SUBSCRIBE, u'gaze')
 
 #create a tcp sender
 sender = TCPSocket('localhost',65535)
+data_sender = UDPSender('127.0.0.1',5500)
 print 'Im working'
 
 #req.set(zmq.SUBSCRIBE,'gaze.')
@@ -96,10 +98,10 @@ if should_start.lower() == 'y' :
             msg = loads(msg, encoding='utf-8')
             #msg = msg.decode('ascii')
             for pupil_datum in msg['base_data'] :
-                if pupil_datum.get['id'] == 0 :
-                   datum0 = {'norm_pos':pupil_datum['norm_pos'],'timestamps':pupil_datum['timestamps'],'id':0}
+                if pupil_datum['id'] == 0 :
+                   datum0 = {'norm_pos':pupil_datum['norm_pos'],'timestamp':pupil_datum['timestamp'],'id':0}
                 else :
-                   datum1 = {'norm_pos':pupil_datum['norm_pos'],'timestamps':pupil_datum['timestamps'],'id':1}
+                   datum1 = {'norm_pos':pupil_datum['norm_pos'],'timestamp':pupil_datum['timestamp'],'id':1}
             ref_data.append(datum0)
             ref_data.append(datum1)
             time.sleep(1/60.) #simulate animation speed.
@@ -121,3 +123,10 @@ time.sleep(2)
 n = {'subject':'service_process.should_stop'}
 print send_recv_notification(n)
 sender.send('e')
+
+while True :
+    topic = sub.recv_string()
+    msg = sub.recv()
+    msg = loads(msg, encoding='utf-8')
+    norm_pos = msg['norm_pos']
+    data_sender.send('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
