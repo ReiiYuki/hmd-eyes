@@ -5,6 +5,10 @@ and run a gaze mapper calibration.
 '''
 import zmq, msgpack, time,sys
 from network import TCPSocket
+from zmq_tools import Msg_Receiver
+from msgpack import loads
+
+#from receiver import Receiver
 
 ctx = zmq.Context()
 
@@ -13,12 +17,29 @@ port = 50124
 if len(sys.argv) >= 2 :
     port = sys.argv[1]
 
+print 'Im working'
+
 #create a zmq REQ socket to talk to Pupil Service/Capture
 req = ctx.socket(zmq.REQ)
 req.connect('tcp://localhost:'+str(port))
+print 'Im working'
+
+# open a sub port to listen to pupil
+req.send_string('SUB_PORT')
+sub_port = req.recv_string()
+
+sub = ctx.socket(zmq.SUB)
+sub.connect('tcp://localhost:'+str(sub_port))
+sub.setsockopt_string(zmq.SUBSCRIBE, u'gaze')
 
 #create a tcp sender
 sender = TCPSocket('localhost',65535)
+print 'Im working'
+
+#req.set(zmq.SUBSCRIBE,'gaze.')
+
+#recv = Receiver()
+print 'Im working'
 
 #convenience functions
 def send_recv_notification(n):
@@ -64,9 +85,21 @@ if should_start.lower() == 'y' :
             # You can set the pupil timebase to another clock and use that.
             t = get_pupil_timestamp()
 
+            #topic,payload = subscriber.recv_multipart()
+        #    payload = recv.receiveData()
+
             # in this mockup  the left and right screen marker positions are identical.
             datum0 = {'norm_pos':pos,'timestamp':t,'id':0}
             datum1 = {'norm_pos':pos,'timestamp':t,'id':1}
+            topic = sub.recv_string()
+            msg = sub.recv()
+            msg = loads(msg, encoding='utf-8')
+            #msg = msg.decode('ascii')
+            for pupil_datum in msg['base_data'] :
+                if pupil_datum.get['id'] == 0 :
+                   datum0 = {'norm_pos':pupil_datum['norm_pos'],'timestamps':pupil_datum['timestamps'],'id':0}
+                else :
+                   datum1 = {'norm_pos':pupil_datum['norm_pos'],'timestamps':pupil_datum['timestamps'],'id':1}
             ref_data.append(datum0)
             ref_data.append(datum1)
             time.sleep(1/60.) #simulate animation speed.
