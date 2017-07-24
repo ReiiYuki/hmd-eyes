@@ -96,6 +96,10 @@ if should_start.lower() == 'y' :
             topic = sub.recv_string()
             msg = sub.recv()
             msg = loads(msg, encoding='utf-8')
+            if msg['confidence'] < 0.9 :
+                s-=1
+            #    print s,msg['confidence']
+                continue
             #msg = msg.decode('ascii')
             for pupil_datum in msg['base_data'] :
                 if pupil_datum['id'] == 0 :
@@ -132,5 +136,6 @@ while True :
 #    print (norm_pos)
 #    print (msg['confidence'])
 #    print ('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
-    if msg['confidence'] >= 0.7 :
+    if msg['confidence'] >= 0.9 :
+        print msg['confidence'],norm_pos
         data_sender.send('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
