@@ -129,4 +129,8 @@ while True :
     msg = sub.recv()
     msg = loads(msg, encoding='utf-8')
     norm_pos = msg['norm_pos']
-    data_sender.send('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
+#    print (norm_pos)
+#    print (msg['confidence'])
+#    print ('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
+    if msg['confidence'] >= 0.7 :
+        data_sender.send('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
