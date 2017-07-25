@@ -33,6 +33,22 @@ sub = ctx.socket(zmq.SUB)
 sub.connect('tcp://localhost:'+str(sub_port))
 sub.setsockopt_string(zmq.SUBSCRIBE, u'gaze')
 
+# open a sub port to listen to pupil
+req.send_string('SUB_PORT')
+sub_port = req.recv_string()
+
+sub_p1 = ctx.socket(zmq.SUB)
+sub_p1.connect('tcp://localhost:'+str(sub_port))
+sub_p1.setsockopt_string(zmq.SUBSCRIBE, u'pupil.0')
+
+# open a sub port to listen to pupil
+req.send_string('SUB_PORT')
+sub_port = req.recv_string()
+
+sub_p2 = ctx.socket(zmq.SUB)
+sub_p2.connect('tcp://localhost:'+str(sub_port))
+sub_p2.setsockopt_string(zmq.SUBSCRIBE, u'pupil.1')
+
 #create a tcp sender
 sender = TCPSocket('localhost',65535)
 data_sender = UDPSender('127.0.0.1',5500)
@@ -52,6 +68,15 @@ def send_recv_notification(n):
 def get_pupil_timestamp():
     req.send('t') #see Pupil Remote Plugin for details
     return float(req.recv())
+
+def get_pupil_data(subscriber) :
+    topic = subscriber.recv_string()
+    msg = subscriber.recv()
+    msg = loads(msg, encoding='utf-8')
+    return msg
+
+def is_in_bound(norm_pos) :
+    return norm_pos[0] >= 0 and norm_pos[0] <= 1 and norm_pos[1] >= 0 and norm_pos[1] <= 1
 
 # set start eye windows
 n = {'subject':'eye_process.should_start.0','eye_id':0, 'args':{}}
@@ -79,7 +104,7 @@ if should_start.lower() == 'y' :
     for pos in ((0.5,0.5),(0,0),(0,0.5),(0,1),(0.5,1),(1,1),(1,0.5),(1,0),(.5,0)):
         print 'subject now looks at position:',pos
         sender.send('u')
-        time.sleep(1)
+        time.sleep(2)
         s = 0
         while s < 60 :
         #for s in range(60):
@@ -93,22 +118,41 @@ if should_start.lower() == 'y' :
         #    payload = recv.receiveData()
 
             # in this mockup  the left and right screen marker positions are identical.
-            datum0 = {'norm_pos':pos,'timestamp':t,'id':0}
-            datum1 = {'norm_pos':pos,'timestamp':t,'id':1}
-            topic = sub.recv_string()
-            msg = sub.recv()
-            msg = loads(msg, encoding='utf-8')
-            if msg['confidence'] <= 0.6 :
-            #    print s,msg['confidence']
+            eye0_msg = get_pupil_data(sub_p1)
+            eye1_msg = get_pupil_data(sub_p2)
+            if eye0_msg['confidence'] <= 0.6 or eye1_msg['confidence'] <=0.6 or not is_in_bound(eye0_msg['norm_pos']) or not is_in_bound(eye1_msg['norm_pos']):
                 continue
+            datum0 = {'norm_pos':eye0_msg['norm_pos'],'timestamp':t,'id':eye0_msg['id']}
+            datum1 = {'norm_pos':eye1_msg['norm_pos'],'timestamp':t,'id':eye1_msg['id']}
+
+#            print 0,datum0
+#            print 1,datum1
+       #     topic = sub.recv_string()
+       #     msg = sub.recv()
+       #     msg = loads(msg, encoding='utf-8')
+
+          #  if msg['confidence'] <= 0.6 :
+            #    print s,msg['confidence']
+           #     continue
+
+     #       bad_value = False
+            #print 'size',len(msg['base_data'])
             #msg = msg.decode('ascii')
-            for pupil_datum in msg['base_data'] :
-                if pupil_datum['id'] == 0 :
-                   datum0 = {'norm_pos':pupil_datum['norm_pos'],'timestamp':pupil_datum['timestamp'],'id':0}
-                else :
-                   datum1 = {'norm_pos':pupil_datum['norm_pos'],'timestamp':pupil_datum['timestamp'],'id':1}
+         #   for pupil_datum in msg['base_data'] :
+            #    print 'pre', pupil_datum['norm_pos']
+       #         if pupil_datum['norm_pos'][0] < 0 or  pupil_datum['norm_pos'][0] > 1 or pupil_datum['norm_pos'][1] < 0 or  pupil_datum['norm_pos'][1] > 1 :
+       #             bad_value = True
+       #             break
+            #    print 'sub' , pupil_datum['norm_pos']
+       #         if pupil_datum['id'] == 0 :
+      #             datum0 = {'norm_pos':pupil_datum['norm_pos'],'timestamp':pupil_datum['timestamp'],'id':0}
+     #           else :
+      #             datum1 = {'norm_pos':pupil_datum['norm_pos'],'timestamp':pupil_datum['timestamp'],'id':1}
+    #        if bad_value :
+     #           continue
+        #    print datum1['norm_pos'],datum0['norm_pos']
             ref_data.append(datum0)
-            ref_data.append(datum1)
+#            ref_data.append(datum1)
             time.sleep(1/60.) #simulate animation speed.
             s+=1
         time.sleep(1)
@@ -135,9 +179,10 @@ while True :
     msg = sub.recv()
     msg = loads(msg, encoding='utf-8')
     norm_pos = msg['norm_pos']
+#    print len(msg['base_data'])
 #    print (norm_pos)
 #    print (msg['confidence'])
 #    print ('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
-    if msg['confidence'] > 0.6 :
-        #print msg['confidence'],norm_pos
+    if msg['confidence'] > 0.6 and norm_pos[0] >= 0 and norm_pos[0] <= 1 and norm_pos[1] >= 0 and norm_pos[1] <= 1  :
+        print msg['confidence'],norm_pos
         data_sender.send('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
