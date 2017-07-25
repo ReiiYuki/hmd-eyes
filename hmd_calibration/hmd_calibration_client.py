@@ -80,7 +80,9 @@ if should_start.lower() == 'y' :
         print 'subject now looks at position:',pos
         sender.send('u')
         time.sleep(1)
-        for s in range(60):
+        s = 0
+        while s < 60 :
+        #for s in range(60):
             # you direct screen animation instructions here
 
             # get the current pupil time (pupil uses CLOCK_MONOTONIC with adjustable timebase).
@@ -96,8 +98,7 @@ if should_start.lower() == 'y' :
             topic = sub.recv_string()
             msg = sub.recv()
             msg = loads(msg, encoding='utf-8')
-            if msg['confidence'] < 0.9 :
-                s-=1
+            if msg['confidence'] <= 0.6 :
             #    print s,msg['confidence']
                 continue
             #msg = msg.decode('ascii')
@@ -109,6 +110,7 @@ if should_start.lower() == 'y' :
             ref_data.append(datum0)
             ref_data.append(datum1)
             time.sleep(1/60.) #simulate animation speed.
+            s+=1
         time.sleep(1)
 
     # Send ref data to Pupil Capture/Service:
@@ -136,6 +138,6 @@ while True :
 #    print (norm_pos)
 #    print (msg['confidence'])
 #    print ('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
-    if msg['confidence'] >= 0.9 :
-        print msg['confidence'],norm_pos
+    if msg['confidence'] > 0.6 :
+        #print msg['confidence'],norm_pos
         data_sender.send('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
