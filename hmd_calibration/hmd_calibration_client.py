@@ -3,7 +3,7 @@ HMD calibration client example.
 This script shows how to talk to Pupil Capture or Pupil Service
 and run a gaze mapper calibration.
 '''
-import zmq, msgpack, time,sys
+import zmq, msgpack, time,sys,csv
 from network import TCPSocket
 from zmq_tools import Msg_Receiver
 from msgpack import loads
@@ -101,22 +101,25 @@ should_start = raw_input('Are you ready for doing calibration ? (Y/N) : ')
 # Positions can be freely defined
 if should_start.lower() == 'y' :
     ref_data = []
-    for pos in ((0.5,0.5),(0,0),(0,0.5),(0,1),(0.5,1),(1,1),(1,0.5),(1,0),(.5,0)):
+
+    csv_file = open("pupil_data.csv", "wb")
+    print csv_file
+    w = csv.writer(csv_file, delimiter=',', quotechar='"')
+    print w
+
+    for pos in ((0.5,0.5),(0,0),(0,0.5),(0,1),(0.5,1),(1,1),(1,0.5),(1,0),(0.5,0)):
         print 'subject now looks at position:',pos
         sender.send('u')
         time.sleep(2)
         s = 0
-        while s < 60 :
+        while s < 120 :
         #for s in range(60):
             # you direct screen animation instructions here
-
             # get the current pupil time (pupil uses CLOCK_MONOTONIC with adjustable timebase).
             # You can set the pupil timebase to another clock and use that.
             t = get_pupil_timestamp()
-
             #topic,payload = subscriber.recv_multipart()
         #    payload = recv.receiveData()
-
             # in this mockup  the left and right screen marker positions are identical.
             eye0_msg = get_pupil_data(sub_p1)
             eye1_msg = get_pupil_data(sub_p2)
@@ -124,17 +127,17 @@ if should_start.lower() == 'y' :
                 continue
             datum0 = {'norm_pos':eye0_msg['norm_pos'],'timestamp':t,'id':eye0_msg['id']}
             datum1 = {'norm_pos':eye1_msg['norm_pos'],'timestamp':t,'id':eye1_msg['id']}
+            w.writerow([pos,datum0['norm_pos'][0],datum0['norm_pos'][1],datum1['norm_pos'][0],datum1['norm_pos'][1],t])
+            csv_file.flush()
 
-#            print 0,datum0
-#            print 1,datum1
+        #    print 0,datum0
+        #    print 1,datum1
        #     topic = sub.recv_string()
        #     msg = sub.recv()
        #     msg = loads(msg, encoding='utf-8')
-
           #  if msg['confidence'] <= 0.6 :
             #    print s,msg['confidence']
            #     continue
-
      #       bad_value = False
             #print 'size',len(msg['base_data'])
             #msg = msg.decode('ascii')
@@ -162,7 +165,7 @@ if should_start.lower() == 'y' :
     # During one calibraiton all new data will be appended.
     n = {'subject':'calibration.add_ref_data','ref_data':ref_data}
     print send_recv_notification(n)
-
+    csv_file.close()
 # stop calibration
 # Pupil will correlate pupil and ref data based on timestamps,
 # compute the gaze mapping params, and start a new gaze mapper.
@@ -184,5 +187,6 @@ while True :
 #    print (msg['confidence'])
 #    print ('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
     if msg['confidence'] > 0.6 and norm_pos[0] >= 0 and norm_pos[0] <= 1 and norm_pos[1] >= 0 and norm_pos[1] <= 1  :
-        print msg['confidence'],norm_pos
+        #print msg['confidence'],norm_pos
+    #    print (len(msg['base_data']))
         data_sender.send('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
