@@ -13,4 +13,6 @@ while True :
 
     g_data = zmq_receiver.get_data(g_sub)
     norm_pos = g_data['norm_pos']
-    streamer.send('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
+
+    if get_data['confidence'] > 0.6 :
+        streamer.send('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
