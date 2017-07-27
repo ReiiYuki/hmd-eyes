@@ -112,7 +112,7 @@ if should_start.lower() == 'y' :
         sender.send('u')
         time.sleep(2)
         s = 0
-        while s < 120 :
+        while s < 60 :
         #for s in range(60):
             # you direct screen animation instructions here
             # get the current pupil time (pupil uses CLOCK_MONOTONIC with adjustable timebase).
@@ -155,7 +155,7 @@ if should_start.lower() == 'y' :
      #           continue
         #    print datum1['norm_pos'],datum0['norm_pos']
             ref_data.append(datum0)
-#            ref_data.append(datum1)
+            ref_data.append(datum1)
             time.sleep(1/60.) #simulate animation speed.
             s+=1
         time.sleep(1)
