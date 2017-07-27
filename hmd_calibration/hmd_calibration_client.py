@@ -45,6 +45,7 @@ print send_recv_notification(n)
 n = {'subject':'calibration.should_start', 'hmd_video_frame_size':(1280,720), 'outlier_threshold':35}
 print send_recv_notification(n)
 
+i = raw_input('Y/N')
 
 # Mockup logic for sample movement:
 # We sample some reference positions (in normalized screen coords).
@@ -76,6 +77,7 @@ for pos in ((0.5,0.5),(0,0),(0,0.5),(0,1),(0.5,1),(1,1),(1,0.5),(1,0),(0.5,0)):
         # in this mockup  the left and right screen marker positions are identical.
         datum0 = {'norm_pos':json_data[0]['norm_pos'],'timestamp':t,'id':0}
         datum1 = {'norm_pos':json_data[1]['norm_pos'],'timestamp':t,'id':1}
+        print datum0
         ref_data.append(datum0)
         ref_data.append(datum1)
         time.sleep(1/60) #simulate animation speed.
