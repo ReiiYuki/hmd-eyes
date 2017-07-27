@@ -3,7 +3,7 @@ HMD calibration client example.
 This script shows how to talk to Pupil Capture or Pupil Service
 and run a gaze mapper calibration.
 '''
-import zmq, msgpack, time,sys,csv
+import zmq, msgpack, time,sys,csv,msvcrt
 from network import TCPSocket
 from zmq_tools import Msg_Receiver
 from msgpack import loads
@@ -78,6 +78,11 @@ def get_pupil_data(subscriber) :
 def is_in_bound(norm_pos) :
     return norm_pos[0] >= 0 and norm_pos[0] <= 1 and norm_pos[1] >= 0 and norm_pos[1] <= 1
 
+def print_eye(sub) :
+    eye1_msg = get_pupil_data(sub)
+    #datum1 = {'norm_pos':eye1_msg['norm_pos'],'timestamp':t,'id':eye1_msg['id']}
+    print eye1_msg['confidence'] , eye1_msg['norm_pos'] , eye1_msg['timestamp']
+
 # set start eye windows
 n = {'subject':'eye_process.should_start.0','eye_id':0, 'args':{}}
 print send_recv_notification(n)
@@ -91,11 +96,17 @@ n = {'subject':'start_plugin','name':'HMD_Calibration', 'args':{}}
 print send_recv_notification(n)
 
 # start caliration routine with params. This will make pupil start sampeling pupil data.
-n = {'subject':'calibration.should_start', 'hmd_video_frame_size':(1000,1000), 'outlier_threshold':35}
+n = {'subject':'calibration.should_start', 'hmd_video_frame_size':(1280,720), 'outlier_threshold':35}
 print send_recv_notification(n)
 
 should_start = raw_input('Are you ready for doing calibration ? (Y/N) : ')
 
+while True :
+    pupil = get_pupil_data(sub_p2)
+    if msvcrt.kbhit():
+        if ord(msvcrt.getch()) == 32:
+            print pupil['confidence'] , pupil['norm_pos'] , pupil['timestamp']
+'''
 # Mockup logic for sample movement:
 # We sample some reference positions (in normalized screen coords).
 # Positions can be freely defined
@@ -103,9 +114,8 @@ if should_start.lower() == 'y' :
     ref_data = []
 
     csv_file = open("pupil_data.csv", "wb")
-    print csv_file
+
     w = csv.writer(csv_file, delimiter=',', quotechar='"')
-    print w
 
     for pos in ((0.5,0.5),(0,0),(0,0.5),(0,1),(0.5,1),(1,1),(1,0.5),(1,0),(0.5,0)):
         print 'subject now looks at position:',pos
@@ -121,16 +131,18 @@ if should_start.lower() == 'y' :
             #topic,payload = subscriber.recv_multipart()
         #    payload = recv.receiveData()
             # in this mockup  the left and right screen marker positions are identical.
+
             eye0_msg = get_pupil_data(sub_p1)
             eye1_msg = get_pupil_data(sub_p2)
-            if eye0_msg['confidence'] <= 0.6 or eye1_msg['confidence'] <=0.6 or not is_in_bound(eye0_msg['norm_pos']) or not is_in_bound(eye1_msg['norm_pos']):
+#            if eye0_msg['confidence'] <= 0.6 or eye1_msg['confidence'] <=0.6 or not is_in_bound(eye0_msg['norm_pos']) or not is_in_bound(eye1_msg['norm_pos']):
+            if eye0_msg['confidence'] <= 0.6 or eye1_msg['confidence'] <=0.6 :
                 continue
             datum0 = {'norm_pos':eye0_msg['norm_pos'],'timestamp':t,'id':eye0_msg['id']}
             datum1 = {'norm_pos':eye1_msg['norm_pos'],'timestamp':t,'id':eye1_msg['id']}
             w.writerow([pos,datum0['norm_pos'][0],datum0['norm_pos'][1],datum1['norm_pos'][0],datum1['norm_pos'][1],t])
             csv_file.flush()
 
-        #    print 0,datum0
+            print 1 , datum1
         #    print 1,datum1
        #     topic = sub.recv_string()
        #     msg = sub.recv()
@@ -190,3 +202,4 @@ while True :
         #print msg['confidence'],norm_pos
     #    print (len(msg['base_data']))
         data_sender.send('%s,%s'%(str(norm_pos[0]),str(norm_pos[1])))
+'''
