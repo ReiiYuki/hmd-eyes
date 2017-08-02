@@ -204,7 +204,7 @@ if raw_input('Do you want to do calibration ?').lower() == 'y' :
     # Positions can be freely defined
 
     ref_data = []
-    for pos in ((0.5,0.5),(0,0),(0,0.5),(0,1),(0.5,1),(1,1),(1,0.5),(1,0),(.5,0)):
+    for pos in ((0.5,0.5),(0,0),(0,0.25),(0,0.5),(0,0.75),(0,1),(0.25,1),(0.5,1),(0.75,1),(1,1),(1,0.75),(1,0.5),(1,0.25),(1,0),(0.75,0),(0.5,0),(0.25,0),(0.25,0.5),(0.75,0.5),(0.25,0.25),(0.25,0.75),(0.5,0.25),(0.5,0.75),(0.75,0.25),(0.75,0.75)):
         print 'subject now looks at position:',pos
         notification_sender.send('u')
 
@@ -221,7 +221,7 @@ if raw_input('Do you want to do calibration ?').lower() == 'y' :
                 datum1 = {'norm_pos':pos,'timestamp':t,'id':1}
                 ref_data.append(datum0)
                 ref_data.append(datum1)
-                print s
+                #print s
                 time.sleep(1/60.) #simulate animation speed.
 
 
